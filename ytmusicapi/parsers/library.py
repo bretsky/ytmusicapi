@@ -1,4 +1,5 @@
 from .playlists import parse_playlist_items
+from .songs import parse_song_runs
 from ._utils import *
 from ytmusicapi.continuations import get_continuations
 
@@ -50,30 +51,8 @@ def parse_albums(results):
         album['thumbnails'] = nav(data, THUMBNAIL_RENDERER)
 
         if 'runs' in data['subtitle']:
-            run_count = len(data['subtitle']['runs'])
-            has_artists = False
-            if run_count == 1:
-                album['year'] = nav(data, SUBTITLE)
-            else:
-                album['type'] = nav(data, SUBTITLE)
-
-            if run_count == 3:
-                if nav(data, SUBTITLE2).isdigit():
-                    album['year'] = nav(data, SUBTITLE2)
-                else:
-                    has_artists = True
-
-            elif run_count > 3:
-                album['year'] = nav(data, SUBTITLE3)
-                has_artists = True
-
-            if has_artists:
-                subtitle = data['subtitle']['runs'][2]
-                album['artists'] = []
-                album['artists'].append({
-                    'name': subtitle['text'],
-                    'id': nav(subtitle, NAVIGATION_BROWSE_ID, True)
-                })
+            album['type'] = nav(data, SUBTITLE)
+            album.update(parse_song_runs(data['subtitle']['runs'][2:]))
 
         albums.append(album)
 
@@ -98,16 +77,30 @@ def parse_library_artists(response, request_func, limit):
 
 def parse_library_songs(response):
     results = get_library_contents(response, MUSIC_SHELF)
-    return {'results': results, 'parsed': (parse_playlist_items(results['contents'][1:]))}
+    return {
+        'results': results,
+        'parsed': parse_playlist_items(results['contents'][1:]) if results else results
+    }
 
 
 def get_library_contents(response, renderer):
-    # first 3 lines are original path prior to #301
-    contents = nav(response, SINGLE_COLUMN_TAB + SECTION_LIST, True)
-    if contents is None:  # empty library
-        return None
-    results = find_object_by_key(contents, 'itemSectionRenderer')
-    if results is None:
-        return nav(response, SINGLE_COLUMN_TAB + SECTION_LIST_ITEM + renderer, True)
+    """
+    Find library contents. This function is a bit messy now
+    as it is supporting two different response types. Can be
+    cleaned up once all users are migrated to the new responses.
+    :param response: ytmusicapi response
+    :param renderer: GRID or MUSIC_SHELF
+    :return: library contents or None
+    """
+    section = nav(response, SINGLE_COLUMN_TAB + SECTION_LIST, True)
+    contents = None
+    if section is None:  # empty library
+        contents = nav(response, SINGLE_COLUMN + TAB_1_CONTENT + SECTION_LIST_ITEM + renderer,
+                       True)
     else:
-        return nav(results, ITEM_SECTION + renderer)
+        results = find_object_by_key(section, 'itemSectionRenderer')
+        if results is None:
+            contents = nav(response, SINGLE_COLUMN_TAB + SECTION_LIST_ITEM + renderer, True)
+        else:
+            contents = nav(results, ITEM_SECTION + renderer, True)
+    return contents

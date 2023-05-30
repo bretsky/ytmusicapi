@@ -1,23 +1,24 @@
 Reference
 ==================
 
-
-
 Reference for the YTMusic class.
 
 .. currentmodule:: ytmusicapi
 .. autoclass:: YTMusic
 .. automethod:: YTMusic.__init__
 
+
 Setup
 -----
-See also the :doc:`Setup <setup>` page
+See also the :doc:`Setup <setup/index>` page
 
-.. automethod:: YTMusic.setup
+.. autofunction:: setup
+.. autofunction:: setup_oauth
 
 Search
 ------
 .. automethod:: YTMusic.search
+.. automethod:: YTMusic.get_search_suggestions
 
 Browsing
 --------
@@ -53,6 +54,7 @@ Library
 .. automethod:: YTMusic.get_library_subscriptions
 .. automethod:: YTMusic.get_liked_songs
 .. automethod:: YTMusic.get_history
+.. automethod:: YTMusic.add_history_item
 .. automethod:: YTMusic.remove_history_items
 .. automethod:: YTMusic.rate_song
 .. automethod:: YTMusic.edit_song_library_status

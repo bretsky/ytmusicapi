@@ -1,10 +1,13 @@
+from random import randint
 from ytmusicapi.continuations import *
 from ._utils import *
 from ytmusicapi.parsers.browsing import *
 from ytmusicapi.parsers.library import *
+from typing import List, Dict
 
 
 class LibraryMixin:
+
     def get_library_playlists(self, limit: int = 25) -> List[Dict]:
         """
         Retrieves the playlists in the user's library.
@@ -77,6 +80,8 @@ class LibraryMixin:
 
         results = response['results']
         songs = response['parsed']
+        if songs is None:
+            return []
 
         if 'continuations' in results:
             request_continuations_func = lambda additionalParams: self._send_request(
@@ -214,6 +219,20 @@ class LibraryMixin:
             songs.extend(songlist)
 
         return songs
+
+    def add_history_item(self, song):
+        """
+        Add an item to the account's history using the playbackTracking URI
+        obtained from :py:func:`get_song`.
+
+        :param song: Dictionary as returned by :py:func:`get_song`
+        :return: Full response. response.status_code is 204 if successful
+        """
+        url = song["playbackTracking"]["videostatsPlaybackUrl"]["baseUrl"]
+        CPNA = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+        cpn = "".join((CPNA[randint(0, 256) & 63] for _ in range(0, 16)))
+        params = {"ver": 2, "c": "WEB_REMIX", "cpn": cpn}
+        return self._send_get_request(url, params)
 
     def remove_history_items(self, feedbackTokens: List[str]) -> Dict:  # pragma: no cover
         """

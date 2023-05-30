@@ -4,6 +4,9 @@ from http.cookies import SimpleCookie
 from hashlib import sha1
 import time
 import locale
+
+import unicodedata
+
 from ytmusicapi.constants import *
 
 
@@ -32,7 +35,7 @@ def initialize_context():
 
 def get_visitor_id(request_func):
     response = request_func(YTM_DOMAIN)
-    matches = re.findall(r'ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;', response)
+    matches = re.findall(r'ytcfg\.set\s*\(\s*({.+?})\s*\)\s*;', response.text)
     visitor_id = ""
     if len(matches) > 0:
         ytcfg = json.loads(matches[0])
@@ -56,7 +59,8 @@ def get_authorization(auth):
 
 
 def to_int(string):
-    number_string = re.sub('[^\\d]', '', string)
+    string = unicodedata.normalize("NFKD", string)
+    number_string = re.sub(r'\D', '', string)
     try:
         int_value = locale.atoi(number_string)
     except ValueError:
