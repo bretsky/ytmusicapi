@@ -43,6 +43,7 @@ class YTMusicOAuth:
     @staticmethod
     def _parse_token(response) -> Dict:
         token = response.json()
+        print(token)
         token["expires_at"] = int(time.time()) + int(token["expires_in"])
         return token
 
